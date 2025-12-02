@@ -35,6 +35,7 @@ export const updateBusinessDataSchema = businessDataSchema.partial()
 // Consultant message schema
 export const consultantMessageSchema = z.object({
   message: z.string().min(1, 'Pesan tidak boleh kosong').max(5000, 'Pesan maksimal 5000 karakter'),
+  sessionId: z.string().uuid().optional(),
   context: z.object({
     businessId: z.string().uuid().optional(),
     topic: z.enum(['umum', 'keuangan', 'pemasaran', 'operasional', 'sdm', 'teknologi']).optional(),
@@ -44,8 +45,8 @@ export const consultantMessageSchema = z.object({
 // Analytics query schema
 export const analyticsQuerySchema = z.object({
   businessId: z.string().uuid(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD').optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD').optional(),
   metrics: z.array(z.enum(['revenue', 'expenses', 'profit', 'growth', 'efficiency'])).optional(),
 })
 

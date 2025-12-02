@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
           return addSecurityHeaders(addRateLimitHeaders(response, rateLimit.remaining, rateLimit.resetTime))
         }
 
-        const { message, context } = validation.data
+        const { message, context, sessionId } = validation.data
         const supabase = await createClient()
 
         // Get business context if businessId is provided
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
 
         // Get or create consultation session
         let session: ConsultationSession | null = null
-        const sessionId = body.sessionId
 
         if (sessionId) {
           const { data: existingSession } = await supabase

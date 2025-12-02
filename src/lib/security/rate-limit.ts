@@ -29,9 +29,26 @@ function getClientIP(request: NextRequest): string {
     return realIP
   }
 
-  // Fallback - in production this should be configured properly
-  return 'unknown'
+  // Fallback - use a hash of user-agent as a weak fallback identifier
+  // In production, configure your reverse proxy to set x-forwarded-for correctly
+  const userAgent = request.headers.get('user-agent') || ''
+  return `fallback-${hashCode(userAgent)}`
 }
+
+// Simple hash function for fallback IP identification
+function hashCode(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16)
+}
+
+// Track last cleanup time for deterministic cleanup
+let lastCleanupTime = Date.now()
+const CLEANUP_INTERVAL = 60000 // Clean up every minute
 
 function cleanupExpiredEntries(): void {
   const now = Date.now()
@@ -40,20 +57,22 @@ function cleanupExpiredEntries(): void {
       rateLimitMap.delete(key)
     }
   }
+  lastCleanupTime = now
 }
 
 export function checkRateLimit(
   request: NextRequest,
   endpoint: 'auth' | 'consultant' | 'general' = 'general'
 ): { allowed: boolean; remaining: number; resetTime: number } {
-  // Periodic cleanup of expired entries
-  if (Math.random() < 0.01) {
+  const now = Date.now()
+  
+  // Deterministic cleanup based on time interval
+  if (now - lastCleanupTime > CLEANUP_INTERVAL) {
     cleanupExpiredEntries()
   }
 
   const clientIP = getClientIP(request)
   const key = `${clientIP}:${endpoint}`
-  const now = Date.now()
 
   // Determine max requests based on endpoint type
   let maxRequests: number

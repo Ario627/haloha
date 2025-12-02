@@ -347,20 +347,21 @@ function calculateAnalytics(
   const totalProfit = totalRevenue - totalExpenses
   const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
 
-  // Trend calculations (simplified - comparing first half to second half)
-  const midPoint = revenues.length / 2
-  const firstHalfRevenue = revenues.slice(Math.floor(midPoint)).reduce((sum, r) => sum + r.amount, 0)
-  const secondHalfRevenue = revenues.slice(0, Math.floor(midPoint)).reduce((sum, r) => sum + r.amount, 0)
+  // Trend calculations (comparing older half to newer half)
+  // Note: revenues are ordered by date descending, so first half = newer data, second half = older data
+  const midPoint = Math.floor(revenues.length / 2)
+  const newerHalfRevenue = revenues.slice(0, midPoint).reduce((sum, r) => sum + r.amount, 0)
+  const olderHalfRevenue = revenues.slice(midPoint).reduce((sum, r) => sum + r.amount, 0)
   const revenueTrend: 'up' | 'down' | 'stable' = 
-    secondHalfRevenue > firstHalfRevenue * 1.05 ? 'up' :
-    secondHalfRevenue < firstHalfRevenue * 0.95 ? 'down' : 'stable'
+    newerHalfRevenue > olderHalfRevenue * 1.05 ? 'up' :
+    newerHalfRevenue < olderHalfRevenue * 0.95 ? 'down' : 'stable'
 
-  const expenseMidPoint = expenses.length / 2
-  const firstHalfExpenses = expenses.slice(Math.floor(expenseMidPoint)).reduce((sum, e) => sum + e.amount, 0)
-  const secondHalfExpenses = expenses.slice(0, Math.floor(expenseMidPoint)).reduce((sum, e) => sum + e.amount, 0)
+  const expenseMidPoint = Math.floor(expenses.length / 2)
+  const newerHalfExpenses = expenses.slice(0, expenseMidPoint).reduce((sum, e) => sum + e.amount, 0)
+  const olderHalfExpenses = expenses.slice(expenseMidPoint).reduce((sum, e) => sum + e.amount, 0)
   const expenseTrend: 'up' | 'down' | 'stable' = 
-    secondHalfExpenses > firstHalfExpenses * 1.05 ? 'up' :
-    secondHalfExpenses < firstHalfExpenses * 0.95 ? 'down' : 'stable'
+    newerHalfExpenses > olderHalfExpenses * 1.05 ? 'up' :
+    newerHalfExpenses < olderHalfExpenses * 0.95 ? 'down' : 'stable'
 
   const profitTrend: 'up' | 'down' | 'stable' = 
     revenueTrend === 'up' && expenseTrend !== 'up' ? 'up' :

@@ -15,24 +15,6 @@ export function sanitizeHtml(input: string): string {
   return input.replace(/[&<>"'/]/g, (char) => HTML_ENTITIES[char] || char)
 }
 
-// Remove potential SQL injection patterns (basic protection - use parameterized queries for proper protection)
-export function sanitizeSqlInput(input: string): string {
-  // Remove common SQL injection patterns
-  const sqlPatterns = [
-    /--/g, // SQL comments
-    /;/g,  // Statement terminator
-    /'/g,  // Single quotes (will be handled by parameterized queries)
-    /\\/g, // Backslashes
-  ]
-  
-  let sanitized = input
-  for (const pattern of sqlPatterns) {
-    sanitized = sanitized.replace(pattern, '')
-  }
-  
-  return sanitized
-}
-
 // Deep sanitize object values
 export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
   const sanitized: Record<string, unknown> = {}
