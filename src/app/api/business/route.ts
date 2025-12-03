@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { businessDataSchema, updateBusinessDataSchema } from '@/lib/validations'
 import { withProtection, addSecurityHeaders } from '@/lib/security/auth'
 import { sanitizeObject } from '@/lib/security/sanitize'
+import { logger } from '@/lib/utils/logger'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants'
 import type { Business } from '@/types/database'
 
 // GET - Get user's businesses
@@ -20,9 +22,9 @@ export async function GET(request: NextRequest) {
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.error('Error fetching businesses:', error)
+          logger.error('Error fetching businesses', error)
           const response = NextResponse.json(
-            { success: false, error: 'Gagal mengambil data bisnis' },
+            { success: false, error: ERROR_MESSAGES.INTERNAL_ERROR },
             { status: 500 }
           )
           return addSecurityHeaders(response)
@@ -35,9 +37,9 @@ export async function GET(request: NextRequest) {
         return addSecurityHeaders(response)
 
       } catch (error) {
-        console.error('Error in GET /api/business:', error)
+        logger.error('Error in GET /api/business', error)
         const response = NextResponse.json(
-          { success: false, error: 'Terjadi kesalahan saat mengambil data' },
+          { success: false, error: ERROR_MESSAGES.INTERNAL_ERROR },
           { status: 500 }
         )
         return addSecurityHeaders(response)
@@ -90,24 +92,24 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (error) {
-          console.error('Error creating business:', error)
+          logger.error('Error creating business', error)
           const response = NextResponse.json(
-            { success: false, error: 'Gagal membuat data bisnis' },
+            { success: false, error: ERROR_MESSAGES.BUSINESS_CREATE_FAILED },
             { status: 500 }
           )
           return addSecurityHeaders(response)
         }
 
         const response = NextResponse.json(
-          { success: true, data: data as Business, message: 'Bisnis berhasil ditambahkan!' },
+          { success: true, data: data as Business, message: SUCCESS_MESSAGES.BUSINESS_CREATED },
           { status: 201 }
         )
         return addSecurityHeaders(response)
 
       } catch (error) {
-        console.error('Error in POST /api/business:', error)
+        logger.error('Error in POST /api/business', error)
         const response = NextResponse.json(
-          { success: false, error: 'Terjadi kesalahan saat membuat bisnis' },
+          { success: false, error: ERROR_MESSAGES.INTERNAL_ERROR },
           { status: 500 }
         )
         return addSecurityHeaders(response)
@@ -157,7 +159,7 @@ export async function PATCH(request: NextRequest) {
 
         if (!existing || existing.user_id !== user.id) {
           const response = NextResponse.json(
-            { success: false, error: 'Bisnis tidak ditemukan atau Anda tidak memiliki akses' },
+            { success: false, error: ERROR_MESSAGES.BUSINESS_NOT_FOUND },
             { status: 404 }
           )
           return addSecurityHeaders(response)
@@ -187,24 +189,24 @@ export async function PATCH(request: NextRequest) {
           .single()
 
         if (error) {
-          console.error('Error updating business:', error)
+          logger.error('Error updating business', error)
           const response = NextResponse.json(
-            { success: false, error: 'Gagal memperbarui data bisnis' },
+            { success: false, error: ERROR_MESSAGES.BUSINESS_UPDATE_FAILED },
             { status: 500 }
           )
           return addSecurityHeaders(response)
         }
 
         const response = NextResponse.json(
-          { success: true, data: data as Business, message: 'Bisnis berhasil diperbarui!' },
+          { success: true, data: data as Business, message: SUCCESS_MESSAGES.BUSINESS_UPDATED },
           { status: 200 }
         )
         return addSecurityHeaders(response)
 
       } catch (error) {
-        console.error('Error in PATCH /api/business:', error)
+        logger.error('Error in PATCH /api/business', error)
         const response = NextResponse.json(
-          { success: false, error: 'Terjadi kesalahan saat memperbarui bisnis' },
+          { success: false, error: ERROR_MESSAGES.INTERNAL_ERROR },
           { status: 500 }
         )
         return addSecurityHeaders(response)
@@ -241,7 +243,7 @@ export async function DELETE(request: NextRequest) {
 
         if (!existing || existing.user_id !== user.id) {
           const response = NextResponse.json(
-            { success: false, error: 'Bisnis tidak ditemukan atau Anda tidak memiliki akses' },
+            { success: false, error: ERROR_MESSAGES.BUSINESS_NOT_FOUND },
             { status: 404 }
           )
           return addSecurityHeaders(response)
@@ -253,24 +255,24 @@ export async function DELETE(request: NextRequest) {
           .eq('id', businessId)
 
         if (error) {
-          console.error('Error deleting business:', error)
+          logger.error('Error deleting business', error)
           const response = NextResponse.json(
-            { success: false, error: 'Gagal menghapus bisnis' },
+            { success: false, error: ERROR_MESSAGES.BUSINESS_DELETE_FAILED },
             { status: 500 }
           )
           return addSecurityHeaders(response)
         }
 
         const response = NextResponse.json(
-          { success: true, message: 'Bisnis berhasil dihapus!' },
+          { success: true, message: SUCCESS_MESSAGES.BUSINESS_DELETED },
           { status: 200 }
         )
         return addSecurityHeaders(response)
 
       } catch (error) {
-        console.error('Error in DELETE /api/business:', error)
+        logger.error('Error in DELETE /api/business', error)
         const response = NextResponse.json(
-          { success: false, error: 'Terjadi kesalahan saat menghapus bisnis' },
+          { success: false, error: ERROR_MESSAGES.INTERNAL_ERROR },
           { status: 500 }
         )
         return addSecurityHeaders(response)

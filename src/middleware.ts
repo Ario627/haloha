@@ -1,14 +1,27 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { SECURITY_HEADERS } from '@/lib/constants'
+import { handleCors, addCorsHeaders } from '@/lib/security/cors'
+import { generateRequestId } from '@/lib/helpers/response'
+import { config as appConfig } from '@/lib/config'
 
 export async function middleware(request: NextRequest) {
+  // Handle CORS preflight requests
+  const corsResponse = handleCors(request)
+  if (corsResponse) {
+    return corsResponse
+  }
+
+  // Generate unique request ID for tracking
+  const requestId = generateRequestId()
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    appConfig.supabase.url,
+    appConfig.supabase.anonKey,
     {
       cookies: {
         getAll() {
@@ -30,26 +43,17 @@ export async function middleware(request: NextRequest) {
   // Refreshing the auth token
   await supabase.auth.getUser()
 
-  // Add security headers to all responses
+  // Add security headers from constants
   const response = supabaseResponse
-  
-  // Prevent clickjacking
-  response.headers.set('X-Frame-Options', 'DENY')
-  
-  // Prevent MIME type sniffing
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  
-  // Enable XSS filter
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-  
-  // Strict transport security (HTTPS only)
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-  
-  // Referrer policy
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  
-  // Permissions policy
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  // Add request ID header for tracking
+  response.headers.set('X-Request-ID', requestId)
+
+  // Add CORS headers
+  addCorsHeaders(response, request)
 
   return response
 }

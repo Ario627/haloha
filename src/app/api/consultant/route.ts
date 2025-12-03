@@ -4,7 +4,9 @@ import { consultantMessageSchema } from '@/lib/validations'
 import { withProtection, addSecurityHeaders } from '@/lib/security/auth'
 import { checkRateLimit, rateLimitResponse, addRateLimitHeaders } from '@/lib/security/rate-limit'
 import { sanitizeObject } from '@/lib/security/sanitize'
-import { getAIConsultantResponse, getQuickTips } from '@/lib/ai/consultant'
+import { getAIConsultantResponse, getQuickTips } from '@/lib/ai/provider'
+import { logger } from '@/lib/utils/logger'
+import { ERROR_MESSAGES } from '@/lib/constants'
 import type { Business, ConsultationMessage, ConsultationSession } from '@/types/database'
 
 // POST - Send message to AI consultant
@@ -128,8 +130,8 @@ export async function POST(request: NextRequest) {
         return addSecurityHeaders(addRateLimitHeaders(response, rateLimit.remaining, rateLimit.resetTime))
 
       } catch (error) {
-        console.error('Error in POST /api/consultant:', error)
-        const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat berkomunikasi dengan konsultan AI'
+        logger.error('Error in POST /api/consultant', error)
+        const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.AI_ERROR
         const response = NextResponse.json(
           { success: false, error: errorMessage },
           { status: 500 }

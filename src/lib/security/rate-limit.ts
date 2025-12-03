@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { config } from '@/lib/config'
 
 interface RateLimitEntry {
   count: number
@@ -7,14 +8,6 @@ interface RateLimitEntry {
 
 // In-memory rate limiter (for production, use Redis or similar)
 const rateLimitMap = new Map<string, RateLimitEntry>()
-
-// Rate limit configuration
-const RATE_LIMIT_CONFIG = {
-  windowMs: 60 * 1000, // 1 minute window
-  maxRequests: 60, // Maximum requests per window
-  authMaxRequests: 10, // Stricter limit for auth endpoints
-  consultantMaxRequests: 20, // Limit for AI consultant to prevent abuse
-}
 
 function getClientIP(request: NextRequest): string {
   // Check various headers that might contain the real IP
@@ -74,24 +67,14 @@ export function checkRateLimit(
   const clientIP = getClientIP(request)
   const key = `${clientIP}:${endpoint}`
 
-  // Determine max requests based on endpoint type
-  let maxRequests: number
-  switch (endpoint) {
-    case 'auth':
-      maxRequests = RATE_LIMIT_CONFIG.authMaxRequests
-      break
-    case 'consultant':
-      maxRequests = RATE_LIMIT_CONFIG.consultantMaxRequests
-      break
-    default:
-      maxRequests = RATE_LIMIT_CONFIG.maxRequests
-  }
+  // Determine max requests based on endpoint type using config
+  const maxRequests = config.rateLimit.maxRequests[endpoint]
 
   const entry = rateLimitMap.get(key)
 
   if (!entry || now > entry.resetTime) {
     // New window
-    const resetTime = now + RATE_LIMIT_CONFIG.windowMs
+    const resetTime = now + config.rateLimit.windowMs
     rateLimitMap.set(key, { count: 1, resetTime })
     return { allowed: true, remaining: maxRequests - 1, resetTime }
   }

@@ -8,6 +8,7 @@ Platform konsultan bisnis berbasis AI untuk membantu UMKM (Usaha Mikro, Kecil, d
 - Chat dengan AI yang memahami konteks bisnis UMKM Indonesia
 - Saran yang dipersonalisasi berdasarkan data bisnis Anda
 - Topik: Keuangan, Pemasaran, Operasional, SDM, Teknologi, Legal
+- Pluggable AI provider (mudah ganti ke provider lain)
 
 ### 2. Analytics Bisnis
 - Pencatatan pendapatan dan pengeluaran
@@ -22,17 +23,21 @@ Platform konsultan bisnis berbasis AI untuk membantu UMKM (Usaha Mikro, Kecil, d
 
 ### 4. Keamanan
 - Autentikasi dengan Supabase Auth
-- Rate limiting untuk perlindungan DDoS
-- Input sanitization (XSS, SQL injection prevention)
+- Rate limiting yang configurable
+- CORS protection
+- CSRF token generation & validation
+- Input sanitization (XSS prevention)
 - Row Level Security (RLS) di database
-- Security headers (CSP, HSTS, dll)
+- Security headers (CSP, HSTS, X-Frame-Options, dll)
+- Request ID tracking untuk debugging
+- Structured logging
 
 ## 🚀 Teknologi
 
 - **Framework**: Next.js 16 (App Router)
 - **Database**: Supabase (PostgreSQL)
 - **Autentikasi**: Supabase Auth
-- **AI**: OpenAI GPT-4o-mini
+- **AI**: OpenAI GPT-4o-mini (pluggable)
 - **Validasi**: Zod
 - **Styling**: Tailwind CSS
 - **Bahasa**: TypeScript
@@ -53,9 +58,28 @@ src/
 │   │   └── analytics/      # Analytics & keuangan
 │   └── ...
 ├── lib/
-│   ├── supabase/           # Konfigurasi Supabase
-│   ├── security/           # Rate limiting, sanitization, auth middleware
-│   ├── ai/                 # AI consultant service
+│   ├── ai/
+│   │   └── provider.ts     # AI provider abstraction
+│   ├── config/
+│   │   └── index.ts        # Centralized configuration
+│   ├── constants/
+│   │   └── index.ts        # App-wide constants
+│   ├── errors/
+│   │   └── index.ts        # Custom error classes
+│   ├── helpers/
+│   │   └── response.ts     # API response helpers
+│   ├── security/
+│   │   ├── auth.ts         # Authentication middleware
+│   │   ├── cors.ts         # CORS handling
+│   │   ├── crypto.ts       # CSRF & crypto utilities
+│   │   ├── rate-limit.ts   # Rate limiting
+│   │   └── sanitize.ts     # Input sanitization
+│   ├── supabase/
+│   │   ├── admin.ts        # Admin client
+│   │   ├── client.ts       # Browser client
+│   │   └── server.ts       # Server client
+│   ├── utils/
+│   │   └── logger.ts       # Structured logging
 │   └── validations.ts      # Zod schemas
 ├── types/
 │   └── database.ts         # TypeScript types

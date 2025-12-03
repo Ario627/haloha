@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, rateLimitResponse, addRateLimitHeaders } from './rate-limit'
+import { SECURITY_HEADERS, CONTENT_SECURITY_POLICY, ERROR_MESSAGES } from '@/lib/constants'
+import { logger } from '@/lib/utils/logger'
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -16,7 +18,8 @@ export async function verifyAuth(): Promise<{ user: { id: string; email: string 
     const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error || !user) {
-      return { error: 'Unauthorized - Token tidak valid atau sudah expired', status: 401 }
+      logger.warn('Authentication failed', { error: error?.message })
+      return { error: ERROR_MESSAGES.TOKEN_EXPIRED, status: 401 }
     }
 
     return {
@@ -25,8 +28,9 @@ export async function verifyAuth(): Promise<{ user: { id: string; email: string 
         email: user.email!
       }
     }
-  } catch {
-    return { error: 'Error verifying authentication', status: 500 }
+  } catch (error) {
+    logger.error('Error verifying authentication', error)
+    return { error: ERROR_MESSAGES.INTERNAL_ERROR, status: 500 }
   }
 }
 
@@ -78,29 +82,13 @@ export async function withProtection<T>(
 
 // Add security headers to response
 export function addSecurityHeaders(response: NextResponse): NextResponse {
-  // Prevent clickjacking
-  response.headers.set('X-Frame-Options', 'DENY')
+  // Apply security headers from constants
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
   
-  // Prevent MIME type sniffing
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  
-  // Enable XSS filter
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-  
-  // Strict transport security (HTTPS only)
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-  
-  // Content Security Policy
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.openai.com"
-  )
-  
-  // Referrer policy
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  
-  // Permissions policy
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // Content Security Policy from constants
+  response.headers.set('Content-Security-Policy', CONTENT_SECURITY_POLICY)
   
   return response
 }
